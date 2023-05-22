@@ -160,3 +160,6 @@ cython_debug/
 #.idea/
 .jupyter/
 Legacy/
+Dataset/*
+!Dataset/README.txt
+!Dataset/Compressed/
