@@ -4,10 +4,6 @@ import pandas as pd
 import numpy as np 
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import make_scorer, accuracy_score, f1_score, recall_score, precision_score
 from sklearn.metrics import classification_report
@@ -46,13 +42,13 @@ scorers = {
     'precision': make_scorer(precision_score)
 }
 
-def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
-    ID_lst = f'{modelname}-BASE'
+def model_logging(modelname, Iters, random_search):
+    ID_lst = [f'{modelname}-{str(j).zfill(4)}' for j in range(1, 1+Iters)]
     val = random_search.cv_results_
 
     para_df = pd.DataFrame.from_dict(val['params'])
     para_df['ID'] = ID_lst
-    para_df.to_csv(os.path.join(result_dir, f'{modelname}_Parameters.csv'), mode='a', header=False)
+    para_df.to_csv(os.path.join(result_dir, f'{modelname}_Parameters.csv'))
 
     result_train_df = pd.DataFrame()
     result_train_df['ID'] = ID_lst
@@ -61,7 +57,7 @@ def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
     result_train_df['Recall'] = list(val['mean_train_recall'])
     result_train_df['Precision'] = list(val['mean_train_precision'])
     result_train_df['Time (Sec)'] = list(val['mean_score_time'])
-    result_train_df.to_csv(os.path.join(result_dir, f'{modelname}_Train_result.csv'), mode='a', header=False)
+    result_train_df.to_csv(os.path.join(result_dir, f'{modelname}_Train_result.csv'))
     
     result_test_df = pd.DataFrame()
     result_test_df['ID'] = ID_lst
@@ -70,102 +66,20 @@ def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
     result_test_df['Recall'] = list(val['mean_test_recall'])
     result_test_df['Precision'] = list(val['mean_test_precision'])
     result_test_df['Time (Sec)'] = list(val['mean_fit_time'])
-    result_test_df.to_csv(os.path.join(result_dir, f'{modelname}_Test_result.csv'), mode='a', header=False)
+    result_test_df.to_csv(os.path.join(result_dir, f'{modelname}_Test_result.csv'))
     
+def model_logging_valid(modelname, random_search, X_valid_tfidf, y_valid):
     y_pred = random_search.predict(X_valid_tfidf)
     report = classification_report(y_valid, y_pred, digits=5)
     
-    with open(os.path.join(result_dir, f'Base_{modelname}_Valid_report.txt'), 'w') as f:
+    with open(os.path.join(result_dir, f'{modelname}_Valid_report.txt'), 'w') as f:
         f.write(report)
 
-RFC_para = {
-    'random_state': [RANDOM_STATE]
-}
-
-random_search = RandomizedSearchCV(
-    estimator=RandomForestClassifier(),
-    param_distributions=RFC_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
-
-random_search.fit(X_train_tfidf, y_train)
-model_logging('RFC',Iters,random_search,X_valid_tfidf,y_valid)
-
-random_search = RandomizedSearchCV(
-    estimator=KNeighborsClassifier(),
-    param_distributions={},
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
-
-random_search.fit(X_train_tfidf, y_train)
-model_logging('KNN',Iters,random_search,X_valid_tfidf,y_valid)
-
-LR_para = {
-    'random_state': [RANDOM_STATE]
-}
-
-random_search = RandomizedSearchCV(
-    estimator=LogisticRegression(),
-    param_distributions=LR_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
-
-random_search.fit(X_train_tfidf, y_train)
-model_logging('LR',Iters,random_search,X_valid_tfidf,y_valid)
-
-random_search = RandomizedSearchCV(
-    estimator=MultinomialNB(),
-    param_distributions={},
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
-
-random_search.fit(X_train_tfidf, y_train)
-model_logging('MNB',Iters,random_search,X_valid_tfidf,y_valid)
-
-GBC_para = {
-    'random_state': [RANDOM_STATE]
-}
-
-random_search = RandomizedSearchCV(
-    estimator=GradientBoostingClassifier(),
-    param_distributions=GBC_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
-
-random_search.fit(X_train_tfidf, y_train)
-model_logging('GBC',Iters,random_search,X_valid_tfidf,y_valid)
-
 SVC_para = {
+    'kernel': ['linear', 'poly', 'rbf'],
+    'degree': range(1, 6),
+    'C': np.arange(1e-2, 10, 1e-2),
+    'gamma': ['scale', 'auto'] + list(np.arange(1e-2, 10, 1e-2)),
     'random_state': [RANDOM_STATE]
 }
 
@@ -182,4 +96,6 @@ random_search = RandomizedSearchCV(
 )
 
 random_search.fit(X_train_tfidf, y_train)
-model_logging('SVM',Iters,random_search,X_valid_tfidf,y_valid)
+
+model_logging('SVC',Iters,random_search)
+model_logging_valid('SVC',random_search,X_valid_tfidf,y_valid)
