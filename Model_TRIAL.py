@@ -30,8 +30,8 @@ vectorizer = TfidfVectorizer()
 X_train_tfidf = vectorizer.fit_transform(X_train)
 X_valid_tfidf = vectorizer.transform(X_valid)
 
-Iters = 1
-parallel_workers = 5
+Iters = 100
+parallel_workers = 9
 cross_val_works = 5
 verbose = 2
 
