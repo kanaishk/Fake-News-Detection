@@ -34,8 +34,8 @@ vectorizer = TfidfVectorizer()
 X_train_tfidf = vectorizer.fit_transform(X_train)
 X_valid_tfidf = vectorizer.transform(X_valid)
 
-Iters = 100
-parallel_workers = 8
+Iters = 1
+parallel_workers = 5
 cross_val_works = 5
 verbose = 2
 
@@ -47,12 +47,12 @@ scorers = {
 }
 
 def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
-    ID_lst = [f'{modelname}-{str(j).zfill(4)}' for j in range(1, 1+Iters)]
+    ID_lst = f'{modelname}-BASE'
     val = random_search.cv_results_
 
     para_df = pd.DataFrame.from_dict(val['params'])
     para_df['ID'] = ID_lst
-    para_df.to_csv(os.path.join(result_dir, f'{modelname}_Parameters.csv'))
+    para_df.to_csv(os.path.join(result_dir, f'{modelname}_Parameters.csv'), mode='a', header=False)
 
     result_train_df = pd.DataFrame()
     result_train_df['ID'] = ID_lst
@@ -61,7 +61,7 @@ def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
     result_train_df['Recall'] = list(val['mean_train_recall'])
     result_train_df['Precision'] = list(val['mean_train_precision'])
     result_train_df['Time (Sec)'] = list(val['mean_score_time'])
-    result_train_df.to_csv(os.path.join(result_dir, f'{modelname}_Train_result.csv'))
+    result_train_df.to_csv(os.path.join(result_dir, f'{modelname}_Train_result.csv'), mode='a', header=False)
     
     result_test_df = pd.DataFrame()
     result_test_df['ID'] = ID_lst
@@ -70,21 +70,15 @@ def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
     result_test_df['Recall'] = list(val['mean_test_recall'])
     result_test_df['Precision'] = list(val['mean_test_precision'])
     result_test_df['Time (Sec)'] = list(val['mean_fit_time'])
-    result_test_df.to_csv(os.path.join(result_dir, f'{modelname}_Test_result.csv'))
+    result_test_df.to_csv(os.path.join(result_dir, f'{modelname}_Test_result.csv'), mode='a', header=False)
     
     y_pred = random_search.predict(X_valid_tfidf)
     report = classification_report(y_valid, y_pred, digits=5)
     
-    with open(os.path.join(result_dir, f'{modelname}_Valid_report.txt'), 'w') as f:
+    with open(os.path.join(result_dir, f'Base_{modelname}_Valid_report.txt'), 'w') as f:
         f.write(report)
 
 RFC_para = {
-    'n_estimators': range(100, 551, 50),
-    'criterion': ['gini', 'entropy'],
-    'max_features': ['sqrt', 'log2'],
-    'max_depth': [None] + list(range(1, 100)),
-    'min_samples_split': list(np.arange(0.1, 1, 0.1)) + list(range(2,100)),
-    'min_samples_leaf': list(np.arange(0.1, 0.5, 0.1)) + list(range(1,100)),
     'random_state': [RANDOM_STATE]
 }
 
@@ -102,3 +96,71 @@ random_search = RandomizedSearchCV(
 
 random_search.fit(X_train_tfidf, y_train)
 model_logging('RFC',Iters,random_search,X_valid_tfidf,y_valid)
+
+random_search = RandomizedSearchCV(
+    estimator=KNeighborsClassifier(),
+    param_distributions={},
+    n_iter=Iters,
+    n_jobs=parallel_workers,
+    cv=cross_val_works,
+    scoring=scorers,
+    refit='accuracy',
+    return_train_score=True,
+    verbose=verbose
+)
+
+random_search.fit(X_train_tfidf, y_train)
+model_logging('KNN',Iters,random_search,X_valid_tfidf,y_valid)
+
+LR_para = {
+    'random_state': [RANDOM_STATE]
+}
+
+random_search = RandomizedSearchCV(
+    estimator=LogisticRegression(),
+    param_distributions=LR_para,
+    n_iter=Iters,
+    n_jobs=parallel_workers,
+    cv=cross_val_works,
+    scoring=scorers,
+    refit='accuracy',
+    return_train_score=True,
+    verbose=verbose
+)
+
+random_search.fit(X_train_tfidf, y_train)
+model_logging('LR',Iters,random_search,X_valid_tfidf,y_valid)
+
+random_search = RandomizedSearchCV(
+    estimator=MultinomialNB(),
+    param_distributions={},
+    n_iter=Iters,
+    n_jobs=parallel_workers,
+    cv=cross_val_works,
+    scoring=scorers,
+    refit='accuracy',
+    return_train_score=True,
+    verbose=verbose
+)
+
+random_search.fit(X_train_tfidf, y_train)
+model_logging('MNB',Iters,random_search,X_valid_tfidf,y_valid)
+
+GBC_para = {
+    'random_state': [RANDOM_STATE]
+}
+
+random_search = RandomizedSearchCV(
+    estimator=GradientBoostingClassifier(),
+    param_distributions=GBC_para,
+    n_iter=Iters,
+    n_jobs=parallel_workers,
+    cv=cross_val_works,
+    scoring=scorers,
+    refit='accuracy',
+    return_train_score=True,
+    verbose=verbose
+)
+
+random_search.fit(X_train_tfidf, y_train)
+model_logging('GBC',Iters,random_search,X_valid_tfidf,y_valid)
