@@ -52,7 +52,7 @@ def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
 
     para_df = pd.DataFrame.from_dict(val['params'])
     para_df['ID'] = ID_lst
-    para_df.to_csv(os.path.join(result_dir, f'BASE_{modelname}_Parameters.csv'))
+    para_df.to_csv(os.path.join(result_dir, f'BASE/BASE_{modelname}_Parameters.csv'))
 
     result_train_df = pd.DataFrame()
     result_train_df['ID'] = ID_lst
@@ -61,7 +61,7 @@ def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
     result_train_df['Recall'] = list(val['mean_train_recall'])
     result_train_df['Precision'] = list(val['mean_train_precision'])
     result_train_df['Time (Sec)'] = list(val['mean_score_time'])
-    result_train_df.to_csv(os.path.join(result_dir, f'BASE_{modelname}_Train_result.csv'))
+    result_train_df.to_csv(os.path.join(result_dir, f'BASE/BASE_{modelname}_Train_result.csv'))
     
     result_test_df = pd.DataFrame()
     result_test_df['ID'] = ID_lst
@@ -70,12 +70,12 @@ def model_logging(modelname, Iters, random_search, X_valid_tfidf, y_valid):
     result_test_df['Recall'] = list(val['mean_test_recall'])
     result_test_df['Precision'] = list(val['mean_test_precision'])
     result_test_df['Time (Sec)'] = list(val['mean_fit_time'])
-    result_test_df.to_csv(os.path.join(result_dir, f'BASE_{modelname}_Test_result.csv'))
+    result_test_df.to_csv(os.path.join(result_dir, f'BASE/BASE_{modelname}_Test_result.csv'))
     
     y_pred = random_search.predict(X_valid_tfidf)
     report = classification_report(y_valid, y_pred, digits=5)
     
-    with open(os.path.join(result_dir, f'BASE_{modelname}_Valid_report.txt'), 'w') as f:
+    with open(os.path.join(result_dir, f'BASE/BASE_{modelname}_Valid_report.txt'), 'w') as f:
         f.write(report)
 
 RFC_para = {
