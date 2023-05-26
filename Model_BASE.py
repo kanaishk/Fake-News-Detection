@@ -3,7 +3,7 @@ import random
 import pandas as pd
 import numpy as np 
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
@@ -14,7 +14,7 @@ from sklearn.metrics import classification_report
 
 cwd = os.getcwd()
 dataset_dir = os.path.join(cwd,'Dataset')
-result_dir = os.path.join(cwd,'Results')
+result_dir = os.path.join(cwd,'Results/Count')
 df = pd.read_csv(os.path.join(dataset_dir,'train_news_preprocessed.csv'), low_memory=False, 
                  usecols = ['label','clean_news_tokens','clean_headline_tokens'])
 # 'headline','news','headline_len','news_len','caps_in_headline','caps_in_news',
@@ -30,9 +30,12 @@ y = df['label']  # Target variable (fake or not fake)
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=RANDOM_STATE)
 
-vectorizer = TfidfVectorizer()
-X_train_tfidf = vectorizer.fit_transform(X_train)
-X_valid_tfidf = vectorizer.transform(X_valid)
+transformer = TfidfTransformer(smooth_idf=False)
+vectorizer = CountVectorizer(ngram_range=(1, 2))
+X_train_count = vectorizer.fit_transform(X_train)
+X_valid_count = vectorizer.transform(X_valid)
+#X_train_count = transformer.fit_transform(X_train_count)
+#X_valid_count = transformer.fit_transform(X_valid_count)
 
 Iters = 1
 parallel_workers = 5
@@ -94,8 +97,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('RFC',Iters,random_search,X_valid_tfidf,y_valid)
+random_search.fit(X_train_count, y_train)
+model_logging('RFC',Iters,random_search,X_valid_count,y_valid)
 
 random_search = RandomizedSearchCV(
     estimator=KNeighborsClassifier(),
@@ -109,8 +112,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('KNN',Iters,random_search,X_valid_tfidf,y_valid)
+random_search.fit(X_train_count, y_train)
+model_logging('KNN',Iters,random_search,X_valid_count,y_valid)
 
 LR_para = {
     'random_state': [RANDOM_STATE]
@@ -128,8 +131,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('LR',Iters,random_search,X_valid_tfidf,y_valid)
+random_search.fit(X_train_count, y_train)
+model_logging('LR',Iters,random_search,X_valid_count,y_valid)
 
 random_search = RandomizedSearchCV(
     estimator=MultinomialNB(),
@@ -143,8 +146,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('MNB',Iters,random_search,X_valid_tfidf,y_valid)
+random_search.fit(X_train_count, y_train)
+model_logging('MNB',Iters,random_search,X_valid_count,y_valid)
 
 GBC_para = {
     'random_state': [RANDOM_STATE]
@@ -162,8 +165,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('GBC',Iters,random_search,X_valid_tfidf,y_valid)
+random_search.fit(X_train_count, y_train)
+model_logging('GBC',Iters,random_search,X_valid_count,y_valid)
 
 SVC_para = {
     'random_state': [RANDOM_STATE]
@@ -181,5 +184,5 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('SVM',Iters,random_search,X_valid_tfidf,y_valid)
+random_search.fit(X_train_count, y_train)
+model_logging('SVM',Iters,random_search,X_valid_count,y_valid)
