@@ -97,7 +97,7 @@ base_valid_res = []
 
 # <h4>Base</h4>
 
-# In[ ]:
+# In[10]:
 
 
 for model in modelnamebase:
@@ -124,7 +124,7 @@ for model in modelnamebase:
     base_train_res.append(base_final_train_res)
 
 
-# In[ ]:
+# In[11]:
 
 
 for model in modelnamebase :
@@ -151,7 +151,7 @@ for model in modelnamebase :
     base_valid_res.append(base_valid_res_mdl)
 
 
-# In[ ]:
+# In[12]:
 
 
 base_test_res_df = pd.DataFrame(base_test_res)
@@ -159,7 +159,7 @@ base_test_res_df['Model'] = base_test_res_df['Model'].astype(str)
 base_test_res_df.head(6)
 
 
-# In[ ]:
+# In[13]:
 
 
 base_train_res_df = pd.DataFrame(base_train_res)
@@ -167,7 +167,7 @@ base_train_res_df['Model'] = base_train_res_df['Model'].astype(str)
 base_train_res_df.head(6)
 
 
-# In[ ]:
+# In[14]:
 
 
 base_valid_res_df = pd.DataFrame(base_valid_res)
@@ -177,7 +177,7 @@ base_valid_res_df.head(6)
 
 # <h4>Hyper Tuned</h4>
 
-# In[10]:
+# In[15]:
 
 
 for model in modelname :
@@ -232,7 +232,7 @@ for model in modelname :
     train_res.append(final_train_res)
 
 
-# In[11]:
+# In[16]:
 
 
 for model in modelname :
@@ -259,7 +259,7 @@ for model in modelname :
     valid_res.append(valid_res_mdl)
 
 
-# In[12]:
+# In[17]:
 
 
 test_res_df = pd.DataFrame(test_res)
@@ -267,7 +267,7 @@ test_res_df['Model'] = test_res_df['Model'].astype(str)
 test_res_df.head(6)
 
 
-# In[13]:
+# In[18]:
 
 
 train_res_df = pd.DataFrame(train_res)
@@ -275,7 +275,7 @@ train_res_df['Model'] = train_res_df['Model'].astype(str)
 train_res_df.head(6)
 
 
-# In[14]:
+# In[19]:
 
 
 valid_res_df = pd.DataFrame(valid_res)
@@ -285,18 +285,20 @@ valid_res_df.head(6)
 
 # <h3>Graphing</h3>
 
-# In[ ]:
+# In[20]:
 
 
 graph_dir = os.path.join(cwd,'Graphs')
 
 
-# In[ ]:
+# <h3>Base</h3>
+
+# In[21]:
 
 
 plt.figure(figsize=(10, 6))
-sns.barplot(x='Model', y='Accuracy', data=test_res_df)
-title = 'Test Accuracy by Model'
+sns.barplot(x='Model', y='Accuracy', data=base_train_res_df)
+title='Training Accuracy of Base Models'
 plt.title(title)
 plt.xlabel('Model')
 plt.ylabel('Accuracy')
@@ -305,12 +307,134 @@ plt.show()
 plt.close()
 
 
-# In[ ]:
+# In[22]:
+
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Model', y='Accuracy', data=base_test_res_df)
+title = 'Base Test Accuracy of Base Models'
+plt.title(title)
+plt.xlabel('Model')
+plt.ylabel('Accuracy')
+plt.savefig(os.path.join(graph_dir,title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# In[23]:
+
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Model', y='Accuracy', data=base_valid_res_df)
+title='Base Validation Accuracy of Base Models'
+plt.title(title)
+plt.xlabel('Model')
+plt.ylabel('Accuracy')
+plt.savefig(os.path.join(graph_dir,title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# In[24]:
+
+
+merged_base_df = pd.merge(base_train_res_df, base_test_res_df, on='Model', suffixes=('_train', '_test'))
+merged_base_df = pd.merge(merged_base_df, base_valid_res_df, on='Model')
+
+plt.figure(figsize=(10, 6))
+
+plt.plot(merged_base_df['Model'], merged_base_df['Accuracy_train'], marker='o', label='Training Accuracy')
+for x, y in zip(merged_base_df['Model'], merged_base_df['Accuracy_train']):
+    plt.text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+plt.plot(merged_base_df['Model'], merged_base_df['Accuracy_test'], marker='o', label='Testing Accuracy')
+for x, y in zip(merged_base_df['Model'], merged_base_df['Accuracy_test']):
+    plt.text(x, y-0.011, f'{y:.4f}', ha='center', va='bottom')
+
+plt.plot(merged_base_df['Model'], merged_base_df['Accuracy'], marker='o', label='Validation Accuracy')
+for x, y in zip(merged_base_df['Model'], merged_base_df['Accuracy']):
+    plt.text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+title = 'Base Model Accuracy Comparison'
+plt.title(title)
+plt.xlabel('Model')
+plt.ylabel('Accuracy')
+
+plt.legend()
+plt.savefig(os.path.join(graph_dir,title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# In[25]:
+
+
+# Create a figure with 2x2 subplots
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
+
+# Accuracy subgraph
+axes[0, 0].plot(merged_base_df['Model'], merged_base_df['Accuracy_train'], marker='o', label='Training Accuracy')
+axes[0, 0].plot(merged_base_df['Model'], merged_base_df['Accuracy_test'], marker='o', label='Testing Accuracy')
+axes[0, 0].plot(merged_base_df['Model'], merged_base_df['Accuracy'], marker='o', label='Validation Accuracy')
+axes[0, 0].set_title('Accuracy')
+axes[0, 0].set_xlabel('Model')
+axes[0, 0].set_ylabel('Accuracy')
+axes[0, 0].legend()
+for x, y in zip(merged_base_df['Model'], merged_base_df['Accuracy']):
+    axes[0, 0].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# Precision subgraph
+axes[0, 1].plot(merged_base_df['Model'], merged_base_df['Precision_train'], marker='o', label='Training Precision')
+axes[0, 1].plot(merged_base_df['Model'], merged_base_df['Precision_test'], marker='o', label='Testing Precision')
+axes[0, 1].plot(merged_base_df['Model'], merged_base_df['Precision'], marker='o', label='Validation Precision')
+axes[0, 1].set_title('Precision')
+axes[0, 1].set_xlabel('Model')
+axes[0, 1].set_ylabel('Precision')
+axes[0, 1].legend()
+for x, y in zip(merged_base_df['Model'], merged_base_df['Precision']):
+    axes[0, 1].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# Recall subgraph
+axes[1, 0].plot(merged_base_df['Model'], merged_base_df['Recall_train'], marker='o', label='Training Recall')
+axes[1, 0].plot(merged_base_df['Model'], merged_base_df['Recall_test'], marker='o', label='Testing Recall')
+axes[1, 0].plot(merged_base_df['Model'], merged_base_df['Recall'], marker='o', label='Validation Recall')
+axes[1, 0].set_title('Recall')
+axes[1, 0].set_xlabel('Model')
+axes[1, 0].set_ylabel('Recall')
+axes[1, 0].legend()
+for x, y in zip(merged_base_df['Model'], merged_base_df['Recall']):
+    axes[1, 0].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# F1 Score subgraph
+axes[1, 1].plot(merged_base_df['Model'], merged_base_df['F1-Score_train'], marker='o', label='Training F1 Score')
+axes[1, 1].plot(merged_base_df['Model'], merged_base_df['F1-Score_test'], marker='o', label='Testing F1 Score')
+axes[1, 1].plot(merged_base_df['Model'], merged_base_df['F1-Score'], marker='o', label='Validation F1 Score')
+axes[1, 1].set_title('F1 Score')
+axes[1, 1].set_xlabel('Model')
+axes[1, 1].set_ylabel('F1 Score')
+axes[1, 1].legend()
+for x, y in zip(merged_base_df['Model'], merged_base_df['F1-Score']):
+    axes[1, 1].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# Adjust the spacing between subplots
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+# Save and display the graph
+title = 'Base Model Performance Comparison'
+plt.suptitle(title, fontsize=16)
+plt.savefig(os.path.join(graph_dir, title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# <h3>Hyper Tuned</h3>
+
+# In[26]:
 
 
 plt.figure(figsize=(10, 6))
 sns.barplot(x='Model', y='Accuracy', data=train_res_df)
-title='Train Accuracy by Model'
+title='Training Accuracy of Hyperparameter Tuned Model'
 plt.title(title)
 plt.xlabel('Model')
 plt.ylabel('Accuracy')
@@ -319,16 +443,160 @@ plt.show()
 plt.close()
 
 
-# In[ ]:
+# In[27]:
 
 
 plt.figure(figsize=(10, 6))
-sns.barplot(x='Model', y='Accuracy', data=valid_res_df)
-title='Valid Accuracy by Model'
+sns.barplot(x='Model', y='Accuracy', data=test_res_df)
+title = 'Test Accuracy of Hyperparameter Tuned Model'
 plt.title(title)
 plt.xlabel('Model')
 plt.ylabel('Accuracy')
 plt.savefig(os.path.join(graph_dir,title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# In[28]:
+
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Model', y='Accuracy', data=valid_res_df)
+title='Validation Accuracy of Hyperparameter Tuned Model'
+plt.title(title)
+plt.xlabel('Model')
+plt.ylabel('Accuracy')
+plt.savefig(os.path.join(graph_dir,title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# In[29]:
+
+
+merged_tuned_df = pd.merge(train_res_df, test_res_df, on='Model', suffixes=('_train', '_test'))
+merged_tuned_df = pd.merge(merged_tuned_df, valid_res_df, on='Model')
+
+plt.figure(figsize=(10, 6))
+
+plt.plot(merged_tuned_df['Model'], merged_tuned_df['Accuracy_train'], marker='o', label='Training Accuracy')
+for x, y in zip(merged_tuned_df['Model'], merged_tuned_df['Accuracy_train']):
+    plt.text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+plt.plot(merged_tuned_df['Model'], merged_tuned_df['Accuracy_test'], marker='o', label='Testing Accuracy')
+for x, y in zip(merged_tuned_df['Model'], merged_tuned_df['Accuracy_test']):
+    plt.text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+plt.plot(merged_tuned_df['Model'], merged_tuned_df['Accuracy'], marker='o', label='Validation Accuracy')
+for x, y in zip(merged_tuned_df['Model'], merged_tuned_df['Accuracy']):
+    plt.text(x, y-0.005, f'{y:.4f}', ha='center', va='bottom')
+
+title='Tuned Model Accuracy Comparison'
+plt.title(title)
+plt.xlabel('Model')
+plt.ylabel('Accuracy')
+
+plt.legend()
+plt.savefig(os.path.join(graph_dir,title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# In[30]:
+
+
+# Create a figure with 2x2 subplots
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
+
+# Accuracy subgraph
+axes[0, 0].plot(merged_tuned_df['Model'], merged_tuned_df['Accuracy_train'], marker='o', label='Training Accuracy')
+axes[0, 0].plot(merged_tuned_df['Model'], merged_tuned_df['Accuracy_test'], marker='o', label='Testing Accuracy')
+axes[0, 0].plot(merged_tuned_df['Model'], merged_tuned_df['Accuracy'], marker='o', label='Validation Accuracy')
+axes[0, 0].set_title('Accuracy')
+axes[0, 0].set_xlabel('Model')
+axes[0, 0].set_ylabel('Accuracy')
+axes[0, 0].legend()
+for x, y in zip(merged_tuned_df['Model'], merged_tuned_df['Accuracy']):
+    axes[0, 0].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# Precision subgraph
+axes[0, 1].plot(merged_tuned_df['Model'], merged_tuned_df['Precision_train'], marker='o', label='Training Precision')
+axes[0, 1].plot(merged_tuned_df['Model'], merged_tuned_df['Precision_test'], marker='o', label='Testing Precision')
+axes[0, 1].plot(merged_tuned_df['Model'], merged_tuned_df['Precision'], marker='o', label='Validation Precision')
+axes[0, 1].set_title('Precision')
+axes[0, 1].set_xlabel('Model')
+axes[0, 1].set_ylabel('Precision')
+axes[0, 1].legend()
+for x, y in zip(merged_tuned_df['Model'], merged_tuned_df['Precision']):
+    axes[0, 1].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# Recall subgraph
+axes[1, 0].plot(merged_tuned_df['Model'], merged_tuned_df['Recall_train'], marker='o', label='Training Recall')
+axes[1, 0].plot(merged_tuned_df['Model'], merged_tuned_df['Recall_test'], marker='o', label='Testing Recall')
+axes[1, 0].plot(merged_tuned_df['Model'], merged_tuned_df['Recall'], marker='o', label='Validation Recall')
+axes[1, 0].set_title('Recall')
+axes[1, 0].set_xlabel('Model')
+axes[1, 0].set_ylabel('Recall')
+axes[1, 0].legend()
+for x, y in zip(merged_tuned_df['Model'], merged_tuned_df['Recall']):
+    axes[1, 0].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# F1 Score subgraph
+axes[1, 1].plot(merged_tuned_df['Model'], merged_tuned_df['F1-Score_train'], marker='o', label='Training F1 Score')
+axes[1, 1].plot(merged_tuned_df['Model'], merged_tuned_df['F1-Score_test'], marker='o', label='Testing F1 Score')
+axes[1, 1].plot(merged_tuned_df['Model'], merged_tuned_df['F1-Score'], marker='o', label='Validation F1 Score')
+axes[1, 1].set_title('F1 Score')
+axes[1, 1].set_xlabel('Model')
+axes[1, 1].set_ylabel('F1 Score')
+axes[1, 1].legend()
+for x, y in zip(merged_tuned_df['Model'], merged_tuned_df['F1-Score']):
+    axes[1, 1].text(x, y, f'{y:.4f}', ha='center', va='bottom')
+
+# Adjust the spacing between subplots
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+# Save and display the graph
+title = 'Tuned Model Performance Comparison'
+plt.suptitle(title, fontsize=16)
+plt.savefig(os.path.join(graph_dir, title+'.png'), bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# <h3>Others</h3>
+
+# In[31]:
+
+
+# Calculate the difference in accuracies between base and tuned models
+merged_diff_df = pd.DataFrame()
+merged_diff_df['Model'] = merged_base_df['Model']
+merged_diff_df['Diff_Accuracy_train'] = merged_tuned_df['Accuracy_train'] - merged_base_df['Accuracy_train']
+merged_diff_df['Diff_Accuracy_test'] = merged_tuned_df['Accuracy_test'] - merged_base_df['Accuracy_test']
+merged_diff_df['Diff_Accuracy'] = merged_tuned_df['Accuracy'] - merged_base_df['Accuracy']
+
+# Plot the difference in accuracies
+plt.figure(figsize=(10, 6))
+
+plt.plot(merged_diff_df['Model'], merged_diff_df['Diff_Accuracy_train'], marker='o', label='Training Accuracy')
+for x, y in zip(merged_diff_df['Model'], merged_diff_df['Diff_Accuracy_train']):
+    plt.text(x, y+0.002, f'{y:.4f}', ha='center', va='bottom')
+
+plt.plot(merged_diff_df['Model'], merged_diff_df['Diff_Accuracy_test'], marker='o', label='Testing Accuracy')
+for x, y in zip(merged_diff_df['Model'], merged_diff_df['Diff_Accuracy_test']):
+    plt.text(x, y-0.005, f'{y:.4f}', ha='center', va='bottom')
+
+plt.plot(merged_diff_df['Model'], merged_diff_df['Diff_Accuracy'], marker='o', label='Validation Accuracy')
+for x, y in zip(merged_diff_df['Model'], merged_diff_df['Diff_Accuracy']):
+    plt.text(x, y-0.012, f'{y:.4f}', ha='center', va='bottom')
+
+title = 'Difference in Accuracy-Base vs Tuned Models'
+plt.title(title)
+plt.xlabel('Model')
+plt.ylabel('Accuracy Difference')
+
+plt.legend()
+plt.savefig(os.path.join(graph_dir, title+'.png'), bbox_inches='tight')
 plt.show()
 plt.close()
 
