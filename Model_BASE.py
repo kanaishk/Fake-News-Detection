@@ -168,13 +168,13 @@ random_search = RandomizedSearchCV(
 random_search.fit(X_train_count, y_train)
 model_logging('GBC',Iters,random_search,X_valid_count,y_valid)
 
-SVC_para = {
+SVM_para = {
     'random_state': [RANDOM_STATE]
 }
 
 random_search = RandomizedSearchCV(
     estimator=SVC(),
-    param_distributions=SVC_para,
+    param_distributions=SVM_para,
     n_iter=Iters,
     n_jobs=parallel_workers,
     cv=cross_val_works,

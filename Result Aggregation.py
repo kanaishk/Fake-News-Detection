@@ -73,7 +73,7 @@ Data- Description: There are 11 columns in the dataset provided to you. The desc
 # In[7]:
 
 
-modelname = ['GBC','LR','MNB','RFC','SVC']
+modelname = ['GBC','LR','MNB','RFC','SVM']
 modelnamebase = ['GBC','LR','MNB','RFC','SVM']
 
 

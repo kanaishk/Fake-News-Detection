@@ -405,12 +405,12 @@ model_logging('RFC',Iters,random_search)
 model_logging_valid('RFC',random_search,X_valid_tfidf,y_valid)
 
 
-# <h3>SVC</h3>
+# <h3>SVM</h3>
 
 # In[ ]:
 
 
-SVC_para = {
+SVM_para = {
     'kernel': ['linear', 'poly', 'rbf'],
     'degree': range(1, 6),
     'C': np.arange(1e-2, 10, 1e-2),
@@ -424,7 +424,7 @@ SVC_para = {
 
 random_search = RandomizedSearchCV(
     estimator=SVC(),
-    param_distributions=SVC_para,
+    param_distributions=SVM_para,
     n_iter=Iters,
     n_jobs=parallel_workers,
     cv=cross_val_works,
@@ -444,6 +444,6 @@ random_search.fit(X_train_tfidf, y_train)
 # In[ ]:
 
 
-model_logging('SVC',Iters,random_search)
-model_logging_valid('SVC',random_search,X_valid_tfidf,y_valid)
+model_logging('SVM',Iters,random_search)
+model_logging_valid('SVM',random_search,X_valid_tfidf,y_valid)
 
