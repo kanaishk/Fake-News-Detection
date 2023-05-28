@@ -94,8 +94,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tdidf, y_train)
-model_logging('MNB',Iters,random_search,X_valid_tdidf,y_valid)
+random_search.fit(X_train_tfidf, y_train)
+model_logging('MNB',Iters,random_search,X_valid_tfidf,y_valid)
 
 LR_para = {
     'random_state': [RANDOM_STATE]
@@ -113,8 +113,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tdidf, y_train)
-model_logging('LR',Iters,random_search,X_valid_tdidf,y_valid)
+random_search.fit(X_train_tfidf, y_train)
+model_logging('LR',Iters,random_search,X_valid_tfidf,y_valid)
 
 RFC_para = {
     'random_state': [RANDOM_STATE]
@@ -132,8 +132,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tdidf, y_train)
-model_logging('RFC',Iters,random_search,X_valid_tdidf,y_valid)
+random_search.fit(X_train_tfidf, y_train)
+model_logging('RFC',Iters,random_search,X_valid_tfidf,y_valid)
 
 GBC_para = {
     'random_state': [RANDOM_STATE]
@@ -151,8 +151,8 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tdidf, y_train)
-model_logging('GBC',Iters,random_search,X_valid_tdidf,y_valid)
+random_search.fit(X_train_tfidf, y_train)
+model_logging('GBC',Iters,random_search,X_valid_tfidf,y_valid)
 
 SVM_para = {
     'random_state': [RANDOM_STATE]
@@ -170,5 +170,5 @@ random_search = RandomizedSearchCV(
     verbose=verbose
 )
 
-random_search.fit(X_train_tdidf, y_train)
-model_logging('SVM',Iters,random_search,X_valid_tdidf,y_valid)
+random_search.fit(X_train_tfidf, y_train)
+model_logging('SVM',Iters,random_search,X_valid_tfidf,y_valid)
