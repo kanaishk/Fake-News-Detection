@@ -163,3 +163,4 @@ Legacy/
 Dataset/*
 !Dataset/README.txt
 !Dataset/Compressed/
+Model/

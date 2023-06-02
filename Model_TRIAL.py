@@ -1,7 +1,8 @@
 import os
 import random
 import pandas as pd
-import numpy as np 
+import numpy as np
+import pickle
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -15,9 +16,9 @@ print('Start')
 cwd = os.getcwd()
 dataset_dir = os.path.join(cwd,'Dataset')
 result_dir = os.path.join(cwd,'Results')
+model_dir = os.path.join(cwd,'Model')
 df = pd.read_csv(os.path.join(dataset_dir,'train_news_preprocessed.csv'), low_memory=False, 
                  usecols = ['label','clean_news_tokens'])
-# 'headline','news','headline_len','news_len','caps_in_headline','caps_in_news','clean_headline_tokens'
 
 RANDOM_STATE = 1973
 random.seed(RANDOM_STATE)
@@ -32,10 +33,9 @@ y = df['label']  # Target variable (fake or not fake)
 print('Splitter')
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=RANDOM_STATE)
 
-print('TDIDF')
+print('TFIDF')
 vectorizer = TfidfVectorizer()
 X_train_tfidf = vectorizer.fit_transform(X_train).copy()
-X_valid_tfidf = vectorizer.transform(X_valid).copy()
 
 parallel_workers = 5
 cross_val_works = 5
@@ -104,9 +104,6 @@ result_test_df.to_csv(os.path.join(result_dir, f'{modelname}_Test_result.csv'))
 best_estimator = cv_results['estimator'][np.argmax(cv_results['test_accuracy'])]
 best_estimator.fit(X_train_tfidf, y_train)
 
-y_pred_valid = best_estimator.predict(X_valid_tfidf)
+with open(os.path.join(model_dir,'trained_tuned_model.pkl'), 'wb') as f:
+    pickle.dump(best_estimator, f)
 
-report = classification_report(y_valid, y_pred_valid, digits=5)
-print(report)
-with open(os.path.join(result_dir, f'{modelname}_Valid_report.txt'), 'w') as f:
-    f.write(report)
