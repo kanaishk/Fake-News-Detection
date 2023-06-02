@@ -16,6 +16,7 @@ print('Start')
 cwd = os.getcwd()
 dataset_dir = os.path.join(cwd,'Dataset')
 result_dir = os.path.join(cwd,'Results')
+model_dir = os.path.join(cwd,'Model')
 df = pd.read_csv(os.path.join(dataset_dir,'train_news_preprocessed.csv'), low_memory=False, 
                  usecols = ['label','clean_news_tokens'])
 
