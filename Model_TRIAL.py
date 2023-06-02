@@ -2,17 +2,16 @@ import os
 import random
 import pandas as pd
 import numpy as np 
-from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier, VotingClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import make_scorer, accuracy_score, f1_score, recall_score, precision_score
 from sklearn.metrics import classification_report
-from imblearn.under_sampling import RandomUnderSampler
 
+print('Start')
 cwd = os.getcwd()
 dataset_dir = os.path.join(cwd,'Dataset')
 result_dir = os.path.join(cwd,'Results')
@@ -26,20 +25,19 @@ np.random.seed(RANDOM_STATE)
 pd.options.display.max_seq_items = 20
 pd.options.display.max_rows = 50
 
+print('Tokens')
 X = df['clean_news_tokens'].apply(lambda x: ' '.join(eval(x)))  # Concatenate tokens into space-separated strings
 y = df['label']  # Target variable (fake or not fake)
-print('Splitting now')
-X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=RANDOM_STATE)
-print('Vectorizing now')
-vectorizer = TfidfVectorizer()
-X_train_tfidf = vectorizer.fit_transform(X_train)
-X_valid_tfidf = vectorizer.transform(X_valid)
-print('Balancing now')
-undersampler = RandomUnderSampler(random_state=RANDOM_STATE)
-X_train_tfidf, y_train = undersampler.fit_resample(X_train_tfidf, y_train)
 
-Iters = 100
-parallel_workers = 9
+print('Splitter')
+X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=RANDOM_STATE)
+
+print('TDIDF')
+vectorizer = TfidfVectorizer()
+X_train_tfidf = vectorizer.fit_transform(X_train).copy()
+X_valid_tfidf = vectorizer.transform(X_valid).copy()
+
+parallel_workers = 5
 cross_val_works = 5
 verbose = 4
 
@@ -50,162 +48,65 @@ scorers = {
     'precision': make_scorer(precision_score)
 }
 
-def model_logging(modelname, Iters, random_search):
-    print('Writing now')
-    ID_lst = [f'{modelname}-{str(j).zfill(4)}' for j in range(1, 1+Iters)]
-    val = random_search.cv_results_
+print('Model')
 
-    para_df = pd.DataFrame.from_dict(val['params'])
-    para_df['ID'] = ID_lst
-    para_df.to_csv(os.path.join(result_dir, f'{modelname}_Parameters.csv'))
+modelname = 'Voting'
 
-    result_train_df = pd.DataFrame()
-    result_train_df['ID'] = ID_lst
-    result_train_df['Accuracy'] = list(val['mean_train_accuracy'])
-    result_train_df['F1-Score'] = list(val['mean_train_f1'])
-    result_train_df['Recall'] = list(val['mean_train_recall'])
-    result_train_df['Precision'] = list(val['mean_train_precision'])
-    result_train_df['Time (Sec)'] = list(val['mean_score_time'])
-    result_train_df.to_csv(os.path.join(result_dir, f'{modelname}_Train_result.csv'))
-    
-    result_test_df = pd.DataFrame()
-    result_test_df['ID'] = ID_lst
-    result_test_df['Accuracy'] = list(val['mean_test_accuracy'])
-    result_test_df['F1-Score'] = list(val['mean_test_f1'])
-    result_test_df['Recall'] = list(val['mean_test_recall'])
-    result_test_df['Precision'] = list(val['mean_test_precision'])
-    result_test_df['Time (Sec)'] = list(val['mean_fit_time'])
-    result_test_df.to_csv(os.path.join(result_dir, f'{modelname}_Test_result.csv'))
-    
-def model_logging_valid(modelname, random_search, X_valid_tfidf, y_valid):
-    print('Validating Now')
-    y_pred = random_search.predict(X_valid_tfidf)
-    report = classification_report(y_valid, y_pred, digits=5)
-    
-    with open(os.path.join(result_dir, f'{modelname}_Valid_report.txt'), 'w') as f:
-        f.write(report)
-"""
-MNB_para = {
-    'alpha': np.arange(1e-2, 2, 1e-2),
-    'fit_prior': [True, False]
-    #'max_iter': [1000],
-}
+estimator = []
 
-random_search = RandomizedSearchCV(
-    estimator=MultinomialNB(),
-    param_distributions=MNB_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
+estimator.append(('MNB',MultinomialNB(fit_prior=False, alpha=0.03)))
+estimator.append(('RFC',RandomForestClassifier(n_estimators=150, min_samples_split=44, min_samples_leaf=1, max_features='sqrt', max_depth=87, criterion='gini', random_state=RANDOM_STATE)))
+estimator.append(('GBC',GradientBoostingClassifier(n_estimators=500, min_samples_split=73, min_samples_leaf=20, max_features='sqrt', max_depth=24, learning_rate=0.09, criterion='friedman_mse',  random_state=RANDOM_STATE)))
+estimator.append(('LR',LogisticRegression(solver='saga', penalty='l1', max_iter=1000, C=67.85, random_state=RANDOM_STATE)))
+estimator.append(('SVM',SVC(kernel='rbf', gamma=0.76, degree=1, C=6.23, random_state=RANDOM_STATE)))
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('MNB',Iters,random_search)
-model_logging_valid('MNB',random_search,X_valid_tfidf,y_valid)
+vot_hard = VotingClassifier(estimators = estimator, voting ='hard', verbose=verbose, weights=[1,1,2,1.5,2])
 
-LR_para = {
-    'C': np.arange(1e-2, 1e2, 1e-2),
-    'penalty': ['l1', 'l2'],
-    'solver': ['liblinear', 'saga'],
-    'max_iter': [1000],
-    'random_state': [RANDOM_STATE]
-}
+cv_results = cross_validate(vot_hard,
+                            X_train_tfidf,
+                            y_train,
+                            n_jobs=parallel_workers,
+                            cv=cross_val_works,
+                            scoring=scorers,
+                            return_train_score=True,
+                            return_estimator=True)
 
-random_search = RandomizedSearchCV(
-    estimator=LogisticRegression(),
-    param_distributions=LR_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
+# Calculate mean scores from cross-validation results
+mean_train_accuracy = np.mean(cv_results['train_accuracy'])
+mean_train_f1 = np.mean(cv_results['train_f1'])
+mean_train_recall = np.mean(cv_results['train_recall'])
+mean_train_precision = np.mean(cv_results['train_precision'])
+mean_score_time = np.mean(cv_results['score_time'])
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('LR',Iters,random_search)
-model_logging_valid('LR',random_search,X_valid_tfidf,y_valid)
+mean_test_accuracy = np.mean(cv_results['test_accuracy'])
+mean_test_f1 = np.mean(cv_results['test_f1'])
+mean_test_recall = np.mean(cv_results['test_recall'])
+mean_test_precision = np.mean(cv_results['test_precision'])
+mean_fit_time = np.mean(cv_results['fit_time'])
 
-RFC_para = {
-    'n_estimators': range(100, 551, 50),
-    'criterion': ['gini', 'entropy'],
-    'max_features': ['sqrt', 'log2'],
-    'max_depth': [None] + list(range(1, 100)),
-    'min_samples_split': list(np.arange(0.1, 1, 0.1)) + list(range(2,100)),
-    'min_samples_leaf': list(np.arange(0.1, 0.5, 0.1)) + list(range(1,100)),
-    'random_state': [RANDOM_STATE]
-}
+# Store mean scores in result dataframes
+result_train_df = pd.DataFrame()
+result_train_df['Accuracy'] = [mean_train_accuracy]
+result_train_df['F1-Score'] = [mean_train_f1]
+result_train_df['Recall'] = [mean_train_recall]
+result_train_df['Precision'] = [mean_train_precision]
+result_train_df['Time (Sec)'] = [mean_score_time]
+result_train_df.to_csv(os.path.join(result_dir, f'{modelname}_Train_result.csv'))
 
-random_search = RandomizedSearchCV(
-    estimator=RandomForestClassifier(),
-    param_distributions=RFC_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
+result_test_df = pd.DataFrame()
+result_test_df['Accuracy'] = [mean_test_accuracy]
+result_test_df['F1-Score'] = [mean_test_f1]
+result_test_df['Recall'] = [mean_test_recall]
+result_test_df['Precision'] = [mean_test_precision]
+result_test_df['Time (Sec)'] = [mean_fit_time]
+result_test_df.to_csv(os.path.join(result_dir, f'{modelname}_Test_result.csv'))
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('RFC',Iters,random_search)
-model_logging_valid('RFC',random_search,X_valid_tfidf,y_valid)
-"""
-GBC_para = {
-    'n_estimators': range(100, 551, 50),
-    'criterion': ['friedman_mse'],
-    'learning_rate': np.arange(1e-2, 0.1, 1e-2),
-    'max_features': ['sqrt', 'log2'],
-    'max_depth': [None] + list(range(1, 100)),
-    'min_samples_split': list(np.arange(0.1, 1, 0.1)) + list(range(2,100)),
-    'min_samples_leaf': list(np.arange(0.1, 0.5, 0.1)) + list(range(1,100)),
-    #'max_iter': [1000],
-    'random_state': [RANDOM_STATE]
-}
+best_estimator = cv_results['estimator'][np.argmax(cv_results['test_accuracy'])]
+best_estimator.fit(X_train_tfidf, y_train)
 
-random_search = RandomizedSearchCV(
-    estimator=GradientBoostingClassifier(),
-    param_distributions=GBC_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
+y_pred_valid = best_estimator.predict(X_valid_tfidf)
 
-random_search.fit(X_train_tfidf, y_train)
-model_logging('GBC',Iters,random_search)
-model_logging_valid('GBC',random_search,X_valid_tfidf,y_valid)
-"""
-SVM_para = {
-    'kernel': ['linear', 'poly', 'rbf'],
-    'degree': range(1, 6),
-    'C': np.arange(1e-2, 10, 1e-2),
-    'gamma': ['scale', 'auto'] + list(np.arange(1e-2, 10, 1e-2)),
-    'random_state': [RANDOM_STATE]
-}
-
-random_search = RandomizedSearchCV(
-    estimator=SVC(),
-    param_distributions=SVM_para,
-    n_iter=Iters,
-    n_jobs=parallel_workers,
-    cv=cross_val_works,
-    scoring=scorers,
-    refit='accuracy',
-    return_train_score=True,
-    verbose=verbose
-)
-
-random_search.fit(X_train_tfidf, y_train)
-model_logging('SVM',Iters,random_search)
-model_logging_valid('SVM',random_search,X_valid_tfidf,y_valid)
-"""
+report = classification_report(y_valid, y_pred_valid, digits=5)
+print(report)
+with open(os.path.join(result_dir, f'{modelname}_Valid_report.txt'), 'w') as f:
+    f.write(report)
