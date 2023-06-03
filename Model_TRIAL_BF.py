@@ -60,7 +60,7 @@ estimator.append(('GBC',GradientBoostingClassifier(n_estimators=300, min_samples
 estimator.append(('LR',LogisticRegression(solver='saga', penalty='l2', max_iter=1000, C=4.26, random_state=RANDOM_STATE)))
 estimator.append(('SVM',SVC(kernel='rbf', gamma=1.33, degree=4, C=8.08, random_state=RANDOM_STATE)))
 
-vot_hard = VotingClassifier(estimators = estimator, voting ='hard', verbose=verbose, weights=[1,2,4,1.5,2])
+vot_hard = VotingClassifier(estimators = estimator, voting ='hard', verbose=verbose, weights=[1,3,3,1.5,3])
 
 cv_results = cross_validate(vot_hard,
                             X_train_tfidf,
