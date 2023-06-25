@@ -17,7 +17,7 @@ cwd = os.getcwd()
 dataset_dir = os.path.join(cwd,'Dataset')
 result_dir = os.path.join(cwd,'Results')
 model_dir = os.path.join(cwd,'Model')
-df = pd.read_csv(os.path.join(dataset_dir,'train_news_preprocessed.csv'), low_memory=False, 
+df = pd.read_csv(os.path.join(dataset_dir,'train_news_preprocessed_mc.csv'), low_memory=False, 
                  usecols = ['label','clean_news_tokens'])
 
 RANDOM_STATE = 1973
@@ -61,7 +61,7 @@ estimator.append(('GBC',GradientBoostingClassifier(random_state=RANDOM_STATE)))
 estimator.append(('LR',LogisticRegression(random_state=RANDOM_STATE)))
 estimator.append(('SVM',SVC(random_state=RANDOM_STATE)))
 
-vot_hard = VotingClassifier(estimators = estimator, voting ='hard', verbose=verbose, weights=[1,1,2,1.5,2])
+vot_hard = VotingClassifier(estimators = estimator, voting ='hard', verbose=verbose, weights=[1,1.5,2,2,3])
 
 cv_results = cross_validate(vot_hard,
                             X_train_tfidf,
@@ -105,5 +105,5 @@ result_test_df.to_csv(os.path.join(result_dir, f'BASE/BASE_{modelname}_Test_resu
 best_estimator = cv_results['estimator'][np.argmax(cv_results['test_accuracy'])]
 best_estimator.fit(X_train_tfidf, y_train)
 
-with open(os.path.join(model_dir,'trained_base_model.pkl'), 'wb') as f:
+with open(os.path.join(model_dir,'trained_base_model_mc.pkl'), 'wb') as f:
     pickle.dump(best_estimator, f)
